@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define P_SIZE sizeof(struct psuma)
@@ -12,8 +14,16 @@
 struct psuma {
 	uint16_t v1;
 	uint16_t v2;
-	char msj[10][10];
+	char msj[256];
 };
+
+void terminar_hijo () {
+	int pid, res;
+
+	pid = waitpid ( -1 , &res, WNOHANG );
+	printf ("Termino el proceso %d con resultado %d\n",pid,res);
+
+}
 
 // Función que se encarga de leer un mensaje de aplicacion completo 
 // lee exactamente la cantidad de bytes que se pasan en el argumento total:
@@ -39,11 +49,13 @@ int main() {
 	int sd;
 	int sdc;
 	int lon;
+	int pid;
 	char buffer[P_SIZE];
 	struct sockaddr_in servidor;
 	struct sockaddr_in cliente;
 	struct psuma *suma;
 
+	signal ( SIGCHLD , terminar_hijo );
 
 	servidor.sin_family = AF_INET;
 	servidor.sin_port = htons(4445);
@@ -56,8 +68,6 @@ int main() {
 		exit(-1);
 	}
 
-	printf("Server ready to rock");
-
 	listen ( sd , 5 );
 
 	while (1) {
@@ -65,21 +75,33 @@ int main() {
 		lon = sizeof(cliente);
 		sdc = accept ( sd, (struct sockaddr *) &cliente, &lon );
 
-		while ( ( n = leer_mensaje ( sdc , buffer , P_SIZE ) ) > 0 ) {
+		pid =  fork();
 
-			suma = (struct psuma *) buffer;
+		if (pid == 0) {
 
-			printf("Recibí desde: %s puerto: %d los valores: v1 %d v2 %d \n", inet_ntoa(cliente.sin_addr), ntohs( cliente.sin_port), ntohs(suma->v1), ntohs(suma->v2));
+			close (sd);		
+	
+			while ( ( n = leer_mensaje ( sdc , buffer , P_SIZE ) ) > 0 ) {
+                suma = (struct psuma *) buffer;
 
-			strcpy(suma->msj[0], "Tim McGuiness");
-			strcpy(suma->msj[1], "bbto");
+                printf("Recibí desde: %s puerto: %d los valores: v1 %d v2 %d \n", inet_ntoa(cliente.sin_addr), ntohs( cliente.sin_port), ntohs(suma->v1), ntohs(suma->v2));
 
-			// printf("Enviando: v1 %d v2 %d res %d \n", ntohs(suma->v1), ntohs(suma->v2), ntohl(suma->res));
+                strcpy(suma->msj, "Tim McGuiness");
 
-			send ( sdc , buffer, P_SIZE, 0 );
+                // printf("Enviando: v1 %d v2 %d res %d \n", ntohs(suma->v1), ntohs(suma->v2), ntohl(suma->res));
+
+                send ( sdc , buffer, P_SIZE, 0 );
+			}
+	
+			close (sdc);
+			exit (0);		
+
+		} else {
+
+			printf("Se creo el proceso %d\n",pid);
+			close (sdc);
+
 		}
-
-		close (sdc);
 
 	}
 

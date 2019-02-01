@@ -13,7 +13,7 @@
 struct psuma {
 	uint16_t v1;
 	uint16_t v2;
-	uint32_t res;
+	char msj[10][10];
 };
 
 // Función que se encarga de leer un mensaje de aplicacion completo 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4444);
+	servidor.sin_port = htons(4445);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {
@@ -76,29 +76,45 @@ int main(int argc, char *argv[]) {
 
 	suma = (struct psuma *) buffer;
 
-	while (ntohl(suma->res) != 100) {
-
-		printf("Ingrese valor 1: ");
+	while(1) {
+		printf("Yo:");
 		fgets(teclado, sizeof(teclado), stdin);
 		teclado[strlen(teclado) - 1] = '\0';
 
-		suma->v1 = htons(atoi(teclado));
-
-		printf("Ingrese valor 2 (sumar 100 para salir): ");
-		fgets(teclado, sizeof(teclado), stdin);
-		teclado[strlen(teclado) - 1] = '\0';
-
-		suma->v2 = htons(atoi(teclado));
-
-		suma->res = htonl(0);
+		strcpy(suma->msj[0], teclado);
 
 		send ( sd, buffer, P_SIZE, 0 );
 
 		n = leer_mensaje (sd, buffer, P_SIZE );
 
-		printf("La suma de %d y %d es %d\n", ntohs(suma->v1), ntohs(suma->v2), ntohl(suma->res));
+		printf("Tu amigo dice: %s %s \n", suma->msj[0],suma->msj[1] );
 
 	}
+	
+
+	// while (ntohl(suma->res) != 100) {
+
+	// 	printf("Ingrese valor 1: ");
+	// 	fgets(teclado, sizeof(teclado), stdin);
+	// 	teclado[strlen(teclado) - 1] = '\0';
+
+	// 	suma->v1 = htons(atoi(teclado));
+
+	// 	printf("Ingrese valor 2 (sumar 100 para salir): ");
+	// 	fgets(teclado, sizeof(teclado), stdin);
+	// 	teclado[strlen(teclado) - 1] = '\0';
+
+	// 	suma->v2 = htons(atoi(teclado));
+
+	// 	// suma->res = htonl(0);
+
+	// 	send ( sd, buffer, P_SIZE, 0 );
+
+	// 	n = leer_mensaje (sd, buffer, P_SIZE );
+
+	// 	printf("La suma de %d y %d es %d\n", ntohs(suma->v1), ntohs(suma->v2), ntohl(suma->res));
+
+	// }
 
 	close(sd);
 
