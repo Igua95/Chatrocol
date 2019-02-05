@@ -16,15 +16,15 @@ int leer_mensaje ( int  , char * , int );
 
 #define P_SIZE sizeof(struct psuma)
 
+struct args {
+    char mensaje[256];
+    int socket_client;
+};
+
 struct psuma {
 	uint16_t v1;
 	uint16_t v2;
 	char msj[256];
-};
-
-struct args {
-    char mensaje[256];
-    int socket_client;
 };
 
 int main() {
@@ -35,12 +35,11 @@ int main() {
 	struct sockaddr_in servidor;
 	struct sockaddr_in cliente;
 	pthread_t tid;
-	
+
     struct args *arguments = (struct args *)malloc(sizeof(struct args));
 
-
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4444);
+	servidor.sin_port = htons (4446);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -55,15 +54,12 @@ int main() {
 	listen ( sd , 5);
 
 	strcpy(arguments->mensaje,"Mensaje en blanco");
-
-
 	while (1) {
 
 		lon = sizeof(cliente);
 
 		sd_cli = accept ( sd , (struct sockaddr *) &cliente , &lon);
 		arguments->socket_client = sd_cli;
-
 		pthread_create ( &tid, NULL, suma, (void *) arguments );
 
 	}
@@ -74,11 +70,7 @@ int main() {
 
 void *suma ( void *arg ) {
 
-	struct args *argumentos = arg;
-
-
-	
-	printf("Mensaje: %s\n", argumentos->mensaje);
+	printf("Mensaje: %s\n", ((struct args*)arg)->mensaje);
     printf("Socket: %d\n", ((struct args*)arg)->socket_client);
 
 	int sdc;
@@ -86,27 +78,19 @@ void *suma ( void *arg ) {
 	char buffer[P_SIZE];
 	struct psuma *suma;
 
-	char msjAux[256];
-
 	suma = (struct psuma *) buffer;
 
-    sdc = ((struct args*)arg)->socket_client;
+	sdc = ((struct args*)arg)->socket_client;
 
 	n = 1;
 	while ( n != 0) {
-
 		if ( ( n = leer_mensaje ( sdc , buffer , P_SIZE ) ) > 0 ) {
-
-			// suma->msj = htonl ( ntohs (suma->v1) + ntohs(suma->v2) );
-			printf("recibi: %s \n", suma->msj);
-			strcpy(msjAux,suma->msj);
-			strcpy(suma->msj,argumentos->mensaje);
-
+			printf("llega conexion");
 			send ( sdc , buffer , P_SIZE ,0 );
-			strcpy(argumentos->mensaje,msjAux);
+			printf ("Enviando: %d %d",ntohs(suma->v1),ntohs(suma->v2));
 		}
-
 	}
+	printf("Cierro conexion");
 	close (sdc);
 	
 }

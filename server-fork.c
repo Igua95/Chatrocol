@@ -58,7 +58,7 @@ int main() {
 	signal ( SIGCHLD , terminar_hijo );
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4445);
+	servidor.sin_port = htons(4446);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -74,7 +74,7 @@ int main() {
 
 		lon = sizeof(cliente);
 		sdc = accept ( sd, (struct sockaddr *) &cliente, &lon );
-
+		printf("El socket es >>>>>> %d \n", sdc);
 		pid =  fork();
 
 		if (pid == 0) {
