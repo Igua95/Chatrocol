@@ -12,6 +12,7 @@
 // COMPILAR: cc -o ser tcp_server_threads.c -l pthread
 
 void *clientDispacher (void *);
+void updateStories (int *, char [50]);
 int leer_mensaje ( int  , char * , int );
 
 #define P_SIZE sizeof(struct pChatagram)
@@ -19,11 +20,12 @@ int leer_mensaje ( int  , char * , int );
 struct pChatagram {
 	uint16_t v1;
 	uint16_t v2;
-	char story[2][50];
+	char story[3][50];
+	char message[50];
 };
 
 struct args {
-    char mensaje[2][50];
+    char mensaje[3][50];
     int socket_client;
 };
 
@@ -40,7 +42,7 @@ int main() {
 
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4446);
+	servidor.sin_port = htons (4447);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -97,18 +99,30 @@ void *clientDispacher ( void *arg ) {
 
 		if ( ( n = getChatagram ( sdc , buffer , P_SIZE ) ) > 0 ) {
 
-			printf("recibi: %s \n", chatagram->story[0]);
-			strcpy(msjAux,chatagram->story[0]);
+			printf("recibi: %s \n", chatagram->message);
+			updateStories(argumentos,chatagram->message);
+			// strcpy(argumentos->mensaje[0],argumentos->mensaje[1]);
+			// strcpy(argumentos->mensaje[1],argumentos->mensaje[2]);
+			// strcpy(argumentos->mensaje[2],chatagram->message);
+
+
 			strcpy(chatagram->story[0],argumentos->mensaje[0]);
-			strcpy(chatagram->story[1],"Prueba");
+			strcpy(chatagram->story[1],argumentos->mensaje[1]);
+			strcpy(chatagram->story[2],argumentos->mensaje[2]);
 
 			send ( sdc , buffer , P_SIZE ,0 );
-			strcpy(argumentos->mensaje[0],msjAux);
 		}
 
 	}
 	close (sdc);
 	
+}
+
+void updateStories(int * args, char message[50]) {
+	struct args * argumentos = args;
+	strcpy(argumentos->mensaje[0],argumentos->mensaje[1]);
+	strcpy(argumentos->mensaje[1],argumentos->mensaje[2]);
+	strcpy(argumentos->mensaje[2],message);
 }
 
 int getChatagram ( int socket , char *buffer , int total ) {
