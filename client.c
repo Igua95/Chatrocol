@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4444);
+	servidor.sin_port = htons(4445);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {

@@ -19,11 +19,11 @@ int leer_mensaje ( int  , char * , int );
 struct psuma {
 	uint16_t v1;
 	uint16_t v2;
-	char msj[256];
+	char msj[10][20];
 };
 
 struct args {
-    char mensaje[256];
+    char mensaje[10][50];
     int socket_client;
 };
 
@@ -40,7 +40,7 @@ int main() {
 
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4444);
+	servidor.sin_port = htons (4445);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -54,7 +54,7 @@ int main() {
 
 	listen ( sd , 5);
 
-	strcpy(arguments->mensaje,"Mensaje en blanco");
+	strcpy(arguments->mensaje[0],"Mensaje en blanco");
 
 
 	while (1) {
@@ -78,7 +78,7 @@ void *suma ( void *arg ) {
 
 
 	
-	printf("Mensaje: %s\n", argumentos->mensaje);
+	printf("Mensaje: %s\n", argumentos->mensaje[0]);
     printf("Socket: %d\n", ((struct args*)arg)->socket_client);
 
 	int sdc;
@@ -95,7 +95,7 @@ void *suma ( void *arg ) {
 	n = 1;
 	while ( n != 0) {
 
-		if ( ( n = leer_mensaje ( sdc , buffer , P_SIZE ) ) > 0 ) {
+		if ( ( n = getChatagram ( sdc , buffer , P_SIZE ) ) > 0 ) {
 
 			// suma->msj = htonl ( ntohs (suma->v1) + ntohs(suma->v2) );
 			printf("recibi: %s \n", suma->msj);
@@ -111,7 +111,7 @@ void *suma ( void *arg ) {
 	
 }
 
-int leer_mensaje ( int socket , char *buffer , int total ) {
+int getChatagram ( int socket , char *buffer , int total ) {
 
 	int bytes, leido;
 
