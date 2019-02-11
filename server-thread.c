@@ -11,19 +11,19 @@
 
 // COMPILAR: cc -o ser tcp_server_threads.c -l pthread
 
-void *suma (void *);
+void *clientDispacher (void *);
 int leer_mensaje ( int  , char * , int );
 
-#define P_SIZE sizeof(struct psuma)
+#define P_SIZE sizeof(struct pChatagram)
 
-struct psuma {
+struct pChatagram {
 	uint16_t v1;
 	uint16_t v2;
-	char msj[10][20];
+	char story[2][50];
 };
 
 struct args {
-    char mensaje[10][50];
+    char mensaje[2][50];
     int socket_client;
 };
 
@@ -40,7 +40,7 @@ int main() {
 
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4445);
+	servidor.sin_port = htons (4446);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -64,7 +64,7 @@ int main() {
 		sd_cli = accept ( sd , (struct sockaddr *) &cliente , &lon);
 		arguments->socket_client = sd_cli;
 
-		pthread_create ( &tid, NULL, suma, (void *) arguments );
+		pthread_create ( &tid, NULL, clientDispacher, (void *) arguments );
 
 	}
 
@@ -72,7 +72,7 @@ int main() {
 
 }
 
-void *suma ( void *arg ) {
+void *clientDispacher ( void *arg ) {
 
 	struct args *argumentos = arg;
 
@@ -84,11 +84,11 @@ void *suma ( void *arg ) {
 	int sdc;
 	int n;
 	char buffer[P_SIZE];
-	struct psuma *suma;
+	struct pChatagram *chatagram;
 
-	char msjAux[256];
+	char msjAux[50];
 
-	suma = (struct psuma *) buffer;
+	chatagram = (struct pChatagram *) buffer;
 
     sdc = ((struct args*)arg)->socket_client;
 
@@ -97,13 +97,13 @@ void *suma ( void *arg ) {
 
 		if ( ( n = getChatagram ( sdc , buffer , P_SIZE ) ) > 0 ) {
 
-			// suma->msj = htonl ( ntohs (suma->v1) + ntohs(suma->v2) );
-			printf("recibi: %s \n", suma->msj);
-			strcpy(msjAux,suma->msj);
-			strcpy(suma->msj,argumentos->mensaje);
+			printf("recibi: %s \n", chatagram->story[0]);
+			strcpy(msjAux,chatagram->story[0]);
+			strcpy(chatagram->story[0],argumentos->mensaje[0]);
+			strcpy(chatagram->story[1],"Prueba");
 
 			send ( sdc , buffer , P_SIZE ,0 );
-			strcpy(argumentos->mensaje,msjAux);
+			strcpy(argumentos->mensaje[0],msjAux);
 		}
 
 	}

@@ -13,7 +13,7 @@
 struct psuma {
 	uint16_t v1;
 	uint16_t v2;
-	char msj[256];
+	char msj[2][50];
 };
 
 // Función que se encarga de leer un mensaje de aplicacion completo 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4445);
+	servidor.sin_port = htons(4446);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {
@@ -81,13 +81,17 @@ int main(int argc, char *argv[]) {
 		fgets(teclado, sizeof(teclado), stdin);
 		teclado[strlen(teclado) - 1] = '\0';
 
-		strcpy(suma->msj, teclado);
+		strcpy(suma->msj[0], teclado);
 
 		send ( sd, buffer, P_SIZE, 0 );
 
 		n = leer_mensaje (sd, buffer, P_SIZE );
 
-		printf("Tu amigo dice: %s \n", suma->msj );
+		size_t i = 0;
+		for( i = 0; i < sizeof(suma->msj) / sizeof(suma->msj[0]); i++)
+		{
+			printf("Tu amigo dice: %s \n", suma->msj[i] );
+		}
 
 	}
 	
