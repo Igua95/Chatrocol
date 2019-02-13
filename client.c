@@ -8,10 +8,10 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#define P_SIZE sizeof(struct psuma)
+#define P_SIZE sizeof(struct pChatagram)
 
-struct psuma {
-	uint16_t v1;
+struct pChatagram {
+	uint16_t code;
 	uint16_t v2;
 	char story[3][50];
 	char message[50];
@@ -20,7 +20,7 @@ struct psuma {
 // Función que se encarga de leer un mensaje de aplicacion completo 
 // lee exactamente la cantidad de bytes que se pasan en el argumento total:
 
-int leer_mensaje ( int sd, char * buffer, int total ) {
+int getChatagram ( int sd, char * buffer, int total ) {
     int bytes;
     int leido;
 
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in servidor;
 	struct sockaddr_in cliente;
 	struct hostent *h;
-	struct psuma *suma;
+	struct pChatagram *chatagram;
 
 	if (argc < 2) {
 		printf("Debe ejecutar %s (nombre de host)\n",argv[0]); 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4447);
+	servidor.sin_port = htons(4446);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {
@@ -75,24 +75,50 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
-	suma = (struct psuma *) buffer;
+	chatagram = (struct pChatagram *) buffer;
 
 	while(1) {
 		printf("Yo:");
 		fgets(teclado, sizeof(teclado), stdin);
 		teclado[strlen(teclado) - 1] = '\0';
 
-		strcpy(suma->message, teclado);
+		char fullInput[50];
+		strcpy(fullInput,teclado);
+		
+		/* get the first command */
+		const char s[1] = " ";
+		char *command;
+		command = strtok(teclado, s);
+		
+		if(!strcmp(fullInput,"\0")) { 
+			printf("Tecleo nada! \n");
+			chatagram->code = 120;
+		} else if (!strcmp(command,"/login\0")) {
+			char username[10];
+			strcpy(username, strchr(fullInput, ' '));
+			printf("Se quiere loggear %s \n",username);
+			chatagram->code = 100;
+			strcpy(chatagram->message,username);
+		} else {	
+			chatagram->code = 400;
+			strcpy(chatagram->message, teclado);
+		}
+		
 
 		send ( sd, buffer, P_SIZE, 0 );
 
-		n = leer_mensaje (sd, buffer, P_SIZE );
+		n = getChatagram (sd, buffer, P_SIZE );
 
-		size_t i = 0;
-		for( i = 0; i < sizeof(suma->story) / sizeof(suma->story[0]); i++)
-		{
-			printf("Tu amigo dice: %s \n", suma->story[i] );
+		if(chatagram->code == 401) {
+			size_t i = 0;
+			for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
+			{
+				printf("Tu amigo dice: %s \n", chatagram->story[i] );
+			}
+		} else {
+			printf("Server dice: %s \n", chatagram->message);
 		}
+
 
 	}
 	
