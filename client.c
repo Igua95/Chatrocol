@@ -91,14 +91,14 @@ int main(int argc, char *argv[]) {
 		command = strtok(teclado, s);
 		
 		if(!strcmp(fullInput,"\0")) { 
-			printf("Tecleo nada! \n");
 			chatagram->code = 120;
 		} else if (!strcmp(command,"/login\0")) {
 			char username[10];
 			strcpy(username, strchr(fullInput, ' '));
-			printf("Se quiere loggear %s \n",username);
 			chatagram->code = 100;
 			strcpy(chatagram->message,username);
+        } else if (!strcmp(command,"/whoIsOn\0")) {
+			chatagram->code = 110;
 		} else {	
 			chatagram->code = 400;
 			strcpy(chatagram->message, teclado);
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 			size_t i = 0;
 			for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
 			{
-				printf("Tu amigo dice: %s \n", chatagram->story[i] );
+				printf("%s\n", chatagram->story[i] );
 			}
 		} else {
 			printf("Server dice: %s \n", chatagram->message);
