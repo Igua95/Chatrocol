@@ -28,8 +28,7 @@ void quitter(int);
 #define P_SIZE sizeof(struct pChatagram)
 
 struct pChatagram {
-	uint16_t code;
-	uint16_t v2;
+	int code;
 	char story[3][50];
 	char message[50];
 };

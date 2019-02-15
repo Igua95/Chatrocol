@@ -11,14 +11,10 @@
 #define P_SIZE sizeof(struct pChatagram)
 
 struct pChatagram {
-	uint16_t code;
-	uint16_t v2;
+	int code;
 	char story[3][50];
 	char message[50];
 };
-
-// Función que se encarga de leer un mensaje de aplicacion completo 
-// lee exactamente la cantidad de bytes que se pasan en el argumento total:
 
 int getChatagram ( int sd, char * buffer, int total ) {
     int bytes;
