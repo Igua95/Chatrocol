@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4446);
+	servidor.sin_port = htons(4445);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {
@@ -77,7 +77,8 @@ int main(int argc, char *argv[]) {
 
 	chatagram = (struct pChatagram *) buffer;
 
-	while(1) {
+	int quit = 0;
+	while(!quit) {
 		printf("Yo:");
 		fgets(teclado, sizeof(teclado), stdin);
 		teclado[strlen(teclado) - 1] = '\0';
@@ -99,17 +100,21 @@ int main(int argc, char *argv[]) {
 			strcpy(chatagram->message,username);
         } else if (!strcmp(command,"/whoIsOn\0")) {
 			chatagram->code = 110;
+		} else if (!strcmp(command,"/quit\0")) {
+			chatagram->code = 130;
+			quit = 1;
 		} else {	
-			chatagram->code = 400;
-			strcpy(chatagram->message, teclado);
+			chatagram->code = 140;
+			strcpy(chatagram->message, fullInput);
 		}
 		
 
 		send ( sd, buffer, P_SIZE, 0 );
 
 		n = getChatagram (sd, buffer, P_SIZE );
+		printf("\e[1;1H\e[2J");
 
-		if(chatagram->code == 401) {
+		if(chatagram->code == 111 || chatagram->code == 121 ||chatagram->code == 141) {
 			size_t i = 0;
 			for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
 			{

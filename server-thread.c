@@ -9,12 +9,21 @@
 #include <signal.h>
 #include <unistd.h>
 
-// COMPILAR: cc -o ser tcp_server_threads.c -l pthread
+// Con el siguiente protocolo
+//  request cliente                   response servidor
+//  Cod: 100 (login)                  -> 101 Registered 102 no registered 
+//  Cod: 110 (whoIsOn)                -> 111-ConnectUser[], 112 no hay nadie
+//  Cod: 120 (refresh)                -> 121-Cola
+//  Cod: 130 quit					  -> x
+//  Cod: 140 new message              -> 141 gotcha
 
 void *clientDispacher (void *);
 void updateStories (int *, char [50], int);
 void login(int * , int);
 int leer_mensaje ( int  , char * , int );
+void getUsersOnline(int *);
+void cleanBuffer(int *);
+void quitter(int);
 
 #define P_SIZE sizeof(struct pChatagram)
 
@@ -48,7 +57,7 @@ int main() {
     struct args *arguments = (struct args *)malloc(sizeof(struct args));
 	
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4446);
+	servidor.sin_port = htons (4445);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -72,7 +81,12 @@ int main() {
 		int i = 0;
 		int encontrado = 0;
 		while(!encontrado && i < sizeof(users) / sizeof(users[0])) {
-			if(users[i].socketAssigned == 0) {
+
+			if(users[i].socketAssigned == sd_cli ) {
+				encontrado = 1;
+			}
+			
+			if(users[i].socketAssigned == 0 ) {
 				encontrado = 1;
 				users[i].socketAssigned = sd_cli;
 			}
@@ -90,12 +104,6 @@ int main() {
 void *clientDispacher ( void *arg ) {
 
 	struct args *argumentos = arg;
-
-
-	
-	printf("Mensaje: Re locooooo %s\n", argumentos->mensaje[0]);
-    printf("Socket: %d\n", ((struct args*)arg)->socket_client);
-
 	int sdc;
 	int n;
 	char buffer[P_SIZE];
@@ -112,7 +120,7 @@ void *clientDispacher ( void *arg ) {
 
 		if ( ( n = getChatagram ( sdc , buffer , P_SIZE ) ) > 0 ) {
 
-			printf("Code: %d \n", chatagram->code);
+			printf("Recibo codigo: %d \n", chatagram->code);
 
 
 			int k = 0;
@@ -124,23 +132,32 @@ void *clientDispacher ( void *arg ) {
 			} else if (chatagram->code == 110) {
 				//Who is online
 				getUsersOnline(chatagram);
-
 			} else if (chatagram->code == 120) {
+				// Refresh
+				strcpy(chatagram->story[0],argumentos->mensaje[0]);
+				strcpy(chatagram->story[1],argumentos->mensaje[1]);
+				strcpy(chatagram->story[2],argumentos->mensaje[2]);
 				chatagram->code=121;
-				updateStories(argumentos,chatagram->message, sdc);
-				chatagram->code=401;
+			} else if (chatagram->code == 130) {
+				quitter(sdc);
+				chatagram->code=131;
+				strcpy(chatagram->message,"Usuario desconectado!");
 			} else {
+				//new message
 				updateStories(argumentos,chatagram->message, sdc);
-				chatagram->code=401;
+				strcpy(chatagram->story[0],argumentos->mensaje[0]);
+				strcpy(chatagram->story[1],argumentos->mensaje[1]);
+				strcpy(chatagram->story[2],argumentos->mensaje[2]);
+				chatagram->code=141;
 			}
 			
 
-			strcpy(chatagram->story[0],argumentos->mensaje[0]);
-			strcpy(chatagram->story[1],argumentos->mensaje[1]);
-			strcpy(chatagram->story[2],argumentos->mensaje[2]);
 
+
+			printf("Envio codigo %d \n",chatagram->code);
 			send ( sdc , buffer , P_SIZE ,0 );
 		}
+		cleanBuffer(chatagram);
 
 	}
 	close (sdc);
@@ -161,7 +178,6 @@ void updateStories(int * args, char message[50], int sdc) {
 		}
 		k++;
 	}
-
 	strcat(fullMessage, ": ");
 	strcat(fullMessage, message);
 
@@ -186,24 +202,59 @@ int getChatagram ( int socket , char *buffer , int total ) {
 void login(int * pChatagram, int sdc) {
 	struct pChatagram * chatagram = pChatagram;
 
-	chatagram->code = 101; // no hay lugar disponible
+	chatagram->code = 102; // no hay lugar disponible
 	int k = 0;
 	int encontrado = 0;
 	while(!encontrado && k < sizeof(users) / sizeof(users[0])) {
 		if(users[k].socketAssigned == sdc) {
 			encontrado = 1;
 			strcpy(users[k].nick,chatagram->message);
-			chatagram->code = 102;
+			chatagram->code = 101;
 			strcpy(chatagram->message,"Usuario registrado!");
 		}
 		k++;
 	}
-	printf("Usuario: %d %s \n",users[0].socketAssigned, users[0].nick);
-	printf("Usuario: %d %s \n",users[1].socketAssigned, users[1].nick);
-	printf("Usuario: %d %s \n",users[2].socketAssigned, users[2].nick);
 }
 
 void getUsersOnline(int * pChatagram) {
 	struct pChatagram * chatagram = pChatagram;
+	
+	cleanBuffer(chatagram);
+	//Valor por defecto "sin usuarios"
+	chatagram->code = 112;
 
+	int k = 0;
+	while(k < sizeof(users) / sizeof(users[0])) {
+		if(users[k].socketAssigned != 0) {
+			strcpy(chatagram->story[k],users[k].nick);
+			chatagram->code = 111;
+		}
+		k++;
+	}
+}
+
+void cleanBuffer(int * pChatagram) {
+	struct pChatagram * chatagram = pChatagram;
+
+	size_t i = 0;
+	for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
+	{
+		strcpy(chatagram->story[i],"");
+	}
+	chatagram->code = 0;
+	strcpy(chatagram->message,"");
+}
+
+void quitter(int sdc) {
+	int k = 0;
+	int encontrado = 0;
+	while(!encontrado && k < sizeof(users) / sizeof(users[0])) {
+		if(users[k].socketAssigned == sdc) {
+			encontrado = 1;
+			users[k].socketAssigned = 0;
+			strcpy(users[k].nick,"");
+		}
+
+		k++;
+	}
 }

@@ -5,18 +5,24 @@
 
 int main(int argc, const char * argv[])
 {
-   /* Define a temporary variable */
-   char example[100];
+    char teclado[512];
 
-   /* Copy the first string into the variable */
-   strcpy(example, "Igua");
+    while(1) {
+		fgets(teclado, sizeof(teclado), stdin);
+		teclado[strlen(teclado) - 1] = '\0';
 
-   /* Concatenate the following two strings to the end of the first one */
-   strcat(example, " ");
-   strcat(example, "hola");
+		char fullInput[50];
+		strcpy(fullInput,teclado);
+		
+		/* get the first command */
+		const char s[1] = " ";
+		char *command;
+		command = strtok(teclado, s);    
 
-   /* Display the concatenated strings */
-   printf("%s\n", example);
+        printf("Commando es: %s",command);
+        
+    }
+    
 
    return 0;
 }
