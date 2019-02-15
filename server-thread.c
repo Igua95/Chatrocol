@@ -12,7 +12,7 @@
 // Con el siguiente protocolo
 //  request cliente                   response servidor
 //  Cod: 100 (login)                  -> 101 Registered 102 no registered 
-//  Cod: 110 (whoIsOn)                -> 111-ConnectUser[], 112 no hay nadie
+//  Cod: 110 (online)                -> 111-ConnectUser[], 112 no hay nadie
 //  Cod: 120 (refresh)                -> 121-Cola
 //  Cod: 130 quit					  -> x
 //  Cod: 140 new message              -> 141 gotcha
@@ -20,7 +20,7 @@
 void *clientDispacher (void *);
 void updateStories (int *, char [50], int);
 void login(int * , int);
-int leer_mensaje ( int  , char * , int );
+int getChatagram ( int  , char * , int );
 void getUsersOnline(int *);
 void cleanBuffer(int *);
 void quitter(int);

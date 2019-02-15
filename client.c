@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 			strcpy(username, strchr(fullInput, ' '));
 			chatagram->code = 100;
 			strcpy(chatagram->message,username);
-        } else if (!strcmp(command,"/whoIsOn\0")) {
+        } else if (!strcmp(command,"/online\0")) {
 			chatagram->code = 110;
 		} else if (!strcmp(command,"/quit\0")) {
 			chatagram->code = 130;
@@ -110,7 +110,14 @@ int main(int argc, char *argv[]) {
 		n = getChatagram (sd, buffer, P_SIZE );
 		printf("\e[1;1H\e[2J");
 
-		if(chatagram->code == 111 || chatagram->code == 121 ||chatagram->code == 141) {
+		if(chatagram->code == 111){
+			printf("Usuarios online: \n");
+			size_t i = 0;
+			for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
+			{
+				printf("%s\n", chatagram->story[i] );
+			}			
+		} else if(chatagram->code == 121 ||chatagram->code == 141) {
 			size_t i = 0;
 			for( i = 0; i < sizeof(chatagram->story) / sizeof(chatagram->story[0]); i++)
 			{
