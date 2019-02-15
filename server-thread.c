@@ -9,13 +9,13 @@
 #include <signal.h>
 #include <unistd.h>
 
-// Con el siguiente protocolo
-//  request cliente                   response servidor
-//  Cod: 100 (login)                  -> 101 Registered 102 no registered 
-//  Cod: 110 (online)                -> 111-ConnectUser[], 112 no hay nadie
-//  Cod: 120 (refresh)                -> 121-Cola
-//  Cod: 130 quit					  -> x
-//  Cod: 140 new message              -> 141 gotcha
+// Chatrocol protocolo minimalista de chat.
+//  request cliente   Code protocol             response servidor
+//  /login username   Cod: 100 (login)           -> 101 Registrado 102 no hay espacio(anonimo)
+//  /online 		  Cod: 110 (online)          -> 111-ConnectUser[], 1121 no hay nadie
+//  (enter) 		  Cod: 120 (refresh)         -> 121-Cola
+//  /quit   		  Cod: 130 quit			     -> x
+//  (write and enter) Cod: 140 new message       -> 141 gotcha
 
 void *clientDispacher (void *);
 void updateStories (int *, char [50], int);
@@ -26,10 +26,11 @@ void cleanBuffer(int *);
 void quitter(int);
 
 #define P_SIZE sizeof(struct pChatagram)
+const int maxMsg = 15;
 
 struct pChatagram {
 	int code;
-	char story[3][50];
+	char story[maxMsg][50];
 	char message[50];
 };
 struct usersOnline {
@@ -40,7 +41,7 @@ struct usersOnline {
 struct usersOnline users[3];
 
 struct args {
-    char mensaje[3][50];
+    char mensaje[maxMsg][50];
     int socket_client;
 };
 
@@ -56,7 +57,7 @@ int main() {
     struct args *arguments = (struct args *)malloc(sizeof(struct args));
 	
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons (4445);
+	servidor.sin_port = htons (4448);
 	servidor.sin_addr.s_addr = INADDR_ANY;
 
 	sd = socket (PF_INET, SOCK_STREAM, 0);
@@ -124,7 +125,7 @@ void *clientDispacher ( void *arg ) {
 
 			int k = 0;
 			int encontrado = 0;
-
+			size_t i = 0;
 			if(chatagram->code == 100) {
 				// Register
 				login(chatagram, sdc);
@@ -133,9 +134,11 @@ void *clientDispacher ( void *arg ) {
 				getUsersOnline(chatagram);
 			} else if (chatagram->code == 120) {
 				// Refresh
-				strcpy(chatagram->story[0],argumentos->mensaje[0]);
-				strcpy(chatagram->story[1],argumentos->mensaje[1]);
-				strcpy(chatagram->story[2],argumentos->mensaje[2]);
+				
+				for( i = 0; i < maxMsg; i++)
+				{
+					strcpy(chatagram->story[i],argumentos->mensaje[i]);
+				}	
 				chatagram->code=121;
 			} else if (chatagram->code == 130) {
 				quitter(sdc);
@@ -144,9 +147,10 @@ void *clientDispacher ( void *arg ) {
 			} else {
 				//new message
 				updateStories(argumentos,chatagram->message, sdc);
-				strcpy(chatagram->story[0],argumentos->mensaje[0]);
-				strcpy(chatagram->story[1],argumentos->mensaje[1]);
-				strcpy(chatagram->story[2],argumentos->mensaje[2]);
+				for( i = 0; i < maxMsg; i++)
+				{
+					strcpy(chatagram->story[i],argumentos->mensaje[i]);
+				}	
 				chatagram->code=141;
 			}
 			
@@ -154,6 +158,10 @@ void *clientDispacher ( void *arg ) {
 
 
 			printf("Envio codigo %d \n",chatagram->code);
+				for( i = 0; i < maxMsg; i++)
+				{
+					printf("Envio: %s \n",chatagram->story[i]);
+				}	
 			send ( sdc , buffer , P_SIZE ,0 );
 		}
 		cleanBuffer(chatagram);
@@ -180,9 +188,13 @@ void updateStories(int * args, char message[50], int sdc) {
 	strcat(fullMessage, ": ");
 	strcat(fullMessage, message);
 
-	strcpy(argumentos->mensaje[0],argumentos->mensaje[1]);
-	strcpy(argumentos->mensaje[1],argumentos->mensaje[2]);
-	strcpy(argumentos->mensaje[2],fullMessage);
+	int i = 0;
+	for( i = 0; i < maxMsg; i++)
+	{
+		strcpy(argumentos->mensaje[i],argumentos->mensaje[i+1]);
+	}	
+	strcpy(argumentos->mensaje[maxMsg-1],fullMessage);
+
 }
 
 int getChatagram ( int socket , char *buffer , int total ) {
@@ -221,6 +233,7 @@ void getUsersOnline(int * pChatagram) {
 	cleanBuffer(chatagram);
 	//Valor por defecto "sin usuarios"
 	chatagram->code = 112;
+	strcpy(chatagram->message,"No hay usuarios conectados");
 
 	int k = 0;
 	while(k < sizeof(users) / sizeof(users[0])) {

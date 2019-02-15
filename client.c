@@ -12,7 +12,7 @@
 
 struct pChatagram {
 	int code;
-	char story[3][50];
+	char story[15][50];
 	char message[50];
 };
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	servidor.sin_family = AF_INET;
-	servidor.sin_port = htons(4445);
+	servidor.sin_port = htons(4448);
 	//servidor.sin_addr.s_addr = inet_addr("x.x.x.x");
 
 	if ( h = gethostbyname ( argv [1] ) ) {
